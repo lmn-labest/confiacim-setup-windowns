@@ -12,11 +12,11 @@ AppId={{D5B5F039-857E-4BDE-A39C-BFD645EBAAF9}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
-DefaultDirName={autopf}\{#MyAppName}
+DefaultDirName={sd}\{#MyAppName}
 DisableProgramGroupPage=yes
 UsePreviousAppDir=no
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
-;PrivilegesRequired=lowest
+PrivilegesRequired=lowest
 OutputBaseFilename=confiacim-setup
 Compression=lzma
 SolidCompression=yes
@@ -31,7 +31,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "D:\confiacim_pacote\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\confiacim_pacote\confiacim_bundle.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\confiacim_pacote\lib\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "D:\confiacim_pacote\lib\*"; DestDir: "{app}/lib"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -40,7 +40,25 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Registry]
 Root: HKCU; Subkey: "Environment"; ValueType:string; ValueName: "CONFIACIM_EXEC_TENCIM_BIN"; ValueData: "TENCIM1D_08.exe"; Flags: preservestringtype;
+;Root: HKCU; Subkey: "Environment"; ValueType:string; ValueName: "CONFIACIM_EXEC_TENCIM_DIR"; ValueData: {app}; Flags: preservestringtype;
+Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Check: NeedsAddPath(ExpandConstant('{app}'));
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function NeedsAddPath(Param: string): boolean;
+var
+  OrigPath: string;
+  Find: boolean;
+begin
+  Find := RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', OrigPath);
+  if not Find
+  then begin
+    Result := True;
+    exit;
+  end;
+  { look for the path with leading and trailing semicolon }
+  { Pos() returns 0 if not found }
+  Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
+end;
